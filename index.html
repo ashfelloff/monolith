@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monolith - Secure Message Sharing</title>
+    <!-- Add Inter Mono font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Add Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Add highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/highlight.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter Mono', monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        .container {
+            background-color: #111111;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            transition: all 0.2s ease;
+            min-height: fit-content;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .container:hover {
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
+        }
+        
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: -1px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        
+        h1:hover {
+            opacity: 0.8;
+        }
+        
+        h2, h3 {
+            color: #ffffff;
+            font-weight: 500;
+        }
+        
+        textarea, .key-input, #share-url {
+            width: 100%;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #ffffff;
+            font-family: 'Inter Mono', monospace;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        textarea {
+            min-height: 150px;
+            margin: 10px 0;
+            resize: vertical;
+        }
+        
+        textarea:hover, .key-input:hover, #share-url:hover,
+        textarea:focus, .key-input:focus, #share-url:focus {
+            outline: none;
+            border-color: #666;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #666;
+        }
+        
+        button {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Inter Mono', monospace;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        button:hover {
+            background-color: #cccccc;
+            transform: translateY(-1px);
+        }
+        
+        #share-section, #decrypt-section {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .url-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        #decrypted-message {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            margin-top: 10px;
+        }
+        
+        p {
+            color: #999;
+        }
+        
+        .encryption-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .encryption-option {
+            flex: 1;
+            padding: 15px;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .encryption-option:hover {
+            border-color: #666;
+            transform: translateY(-1px);
+        }
+        
+        .encryption-option.active {
+            border-color: #ffffff;
+            background-color: #222;
+        }
+        
+        .encryption-details {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .encryption-details.active {
+            display: block;
+        }
+
+        #decrypted-subject, #decrypted-message {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            margin-bottom: 15px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        #decrypted-subject {
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        #decrypted-subject:hover, #decrypted-message:hover {
+            border-color: #666;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Add notification styles */
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #1a1a1a;
+            padding: 15px 30px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .notification-content {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        #encrypt-button {
+            min-width: 200px;
+            padding: 12px 30px;
+            font-size: 18px;
+            text-align: center;
+            background-color: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Inter Mono', monospace;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+        }
+
+        #encrypt-button:hover {
+            background-color: #cccccc;
+            transform: translateY(-1px);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            text-align: center;
+            color: #ffffff;
+            font-weight: 500;
+            margin: 25px 0;
+            font-size: 1em;
+            opacity: 0.8;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            opacity: 0.6;
+            transition: all 0.2s ease;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 30px;
+            box-sizing: border-box;
+        }
+
+        .footer a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 0.9em;
+            padding: 5px 10px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .footer:hover {
+            opacity: 1;
+        }
+
+        .footer a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .blur-container {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .blur-container.revealed {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+
+        .password-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .password-input-container {
+            text-align: center;
+            background: transparent;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .password-input-container input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'Inter Mono', monospace;
+            font-size: 1.2em;
+            padding: 10px;
+            width: 100%; /* Match container width */
+            text-align: center;
+            transition: all 0.2s ease;
+            caret-color: white;
+            box-shadow: none;
+            -webkit-appearance: none;
+            border-radius: 0;
+        }
+
+        /* Remove any default autofill styles */
+        .password-input-container input:-webkit-autofill,
+        .password-input-container input:-webkit-autofill:hover,
+        .password-input-container input:-webkit-autofill:focus {
+            -webkit-text-fill-color: white;
+            -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .password-input-container input:focus {
+            outline: none;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .password-input-container input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .password-input-container input:focus::placeholder {
+            opacity: 0;
+        }
+
+        /* Add these media queries to your existing styles */
+        
+        /* Mobile optimization */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            /* Make encryption options stack on mobile */
+            .encryption-options {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .encryption-option {
+                width: 100%;
+            }
+
+            /* Adjust URL sharing container */
+            .url-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #copy-button {
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            /* Adjust input sizes */
+            textarea, .key-input {
+                font-size: 16px; /* Prevents zoom on mobile */
+                padding: 12px;
+            }
+
+            /* Make buttons more tappable */
+            button {
+                min-height: 44px; /* iOS minimum tappable size */
+                width: 100%;
+            }
+
+            /* Adjust notification position */
+            .notification {
+                width: 90%;
+                left: 5%;
+                transform: translateX(0) translateY(100px);
+            }
+
+            .notification.show {
+                transform: translateX(0) translateY(0);
+            }
+        }
+
+        /* Tablet optimization */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 25px;
+            }
+        }
+
+        /* Add these styles */
+        canvas#background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        /* Blinking cursor animation */
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+
+        /* Add/update share section styles */
+        #share-section h3 {
+            text-align: center;
+            text-transform: lowercase;
+            margin-bottom: 20px;
+        }
+
+        /* Update decrypted message container styles */
+        #decrypted-message-container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        #decrypted-message {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            margin-bottom: 15px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            min-height: 200px; /* Minimum height */
+            max-height: 600px; /* Maximum height before scrolling */
+            overflow-y: auto;
+            white-space: pre-wrap; /* Preserve line breaks and wrap text */
+            word-wrap: break-word; /* Break long words */
+        }
+
+        /* Style the vertical scrollbar */
+        #decrypted-message::-webkit-scrollbar {
+            width: 8px;
+            height: 100%;
+        }
+
+        #decrypted-message::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 0 5px 5px 0;
+        }
+
+        #decrypted-message::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        #decrypted-message::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* Add export button container */
+        .export-container {
+            text-align: center;
+            margin-top: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .export-container.visible {
+            opacity: 1;
+        }
+
+        .export-button {
+            background: transparent;
+            color: #fff;
+            border: 1px solid #333;
+            padding: 8px 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .export-button:hover {
+            border-color: #666;
+            opacity: 1;
+        }
+
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .password-modal-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .password-modal-content input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'Inter Mono', monospace;
+            font-size: 1.2em;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.2s ease;
+            caret-color: white;
+        }
+
+        .password-modal-content input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            transition: opacity 0.3s ease;
+        }
+
+        .password-modal-content input:focus::placeholder {
+            opacity: 0;
+        }
+
+        .password-modal-content input:focus {
+            outline: none;
+        }
+
+        .password-error {
+            color: #ff4444;
+            text-align: center;
+            font-size: 0.9em;
+            min-height: 20px;
+        }
+
+        #confirm-password {
+            background: transparent;
+            border: 1px solid #333;
+            color: white;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        #confirm-password:hover {
+            border-color: #666;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background-animation"></canvas>
+    <div class="container">
+        <h1 onclick="window.location.href = window.location.pathname">monolith</h1>
+        <div id="encrypt-section">
+            <input type="text" 
+                   id="subject-input" 
+                   class="key-input" 
+                   placeholder="Subject (optional)" 
+                   style="margin-bottom: 15px;">
+            
+            <textarea id="message-input" placeholder="Enter your message here..."></textarea>
+            
+            <h3 class="section-title">choose encryption method</h3>
+            <div class="encryption-options">
+                <div class="encryption-option" data-method="link">
+                    <h4>Link Encryption</h4>
+                    <p>Generate a secure URL</p>
+                </div>
+                <div class="encryption-option" data-method="scribe">
+                    <h4>Scribe Encryption</h4>
+                    <p>Password-based encryption</p>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <button id="encrypt-button">Encrypt Message</button>
+            </div>
+            
+            <div id="share-section">
+                <h3>share your encrypted message</h3>
+                <div class="url-container">
+                    <input type="text" id="share-url" readonly>
+                    <button id="copy-button">Copy URL</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="decrypt-section">
+            <div class="password-overlay" id="password-overlay" style="display: none;">
+                <div class="password-input-container">
+                    <input type="password" 
+                           id="decrypt-password"
+                           placeholder="click to enter password"
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="blur-container" id="decrypted-content">
+                <div id="decrypted-message-container">
+                    <div id="decrypted-subject"></div>
+                    <div id="decrypted-message"></div>
+                    <div class="export-container">
+                        <button class="export-button" onclick="exportToFile()">export to file</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        <a href="https://github.com/ashfelloff" target="_blank">
+            made by ashfelloff
+        </a>
+    </div>
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            Link copied to clipboard!
+        </div>
+    </div>
+    <div id="password-modal" class="password-modal">
+        <div class="password-modal-content">
+            <input type="password" 
+                   id="scribe-password" 
+                   placeholder="enter password"
+                   autocomplete="off">
+            <input type="password" 
+                   id="scribe-password-confirm" 
+                   placeholder="confirm password"
+                   autocomplete="off">
+            <div class="password-error" id="password-error"></div>
+            <button id="confirm-password">confirm</button>
+        </div>
+    </div>
+    <script src="main.js"></script>
+    <script>
+        // Initialize background animation
+        const canvas = document.getElementById('background-animation');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Particle class
+        class Particle {
+            constructor() {
+                this.reset();
+                this.pulseSpeed = Math.random() * 0.02 + 0.01; // Speed of opacity pulsing
+                this.pulseOffset = Math.random() * Math.PI * 2; // Random starting point for pulse
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5; // Size between 0.5 and 2
+                this.speedX = (Math.random() - 0.5) * 0.5; // Increased speed
+                this.speedY = (Math.random() - 0.5) * 0.5; // Increased speed
+                this.baseOpacity = Math.random() * 0.4 + 0.2; // Base opacity between 0.2 and 0.6
+                this.time = 0;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.time += this.pulseSpeed;
+
+                // Pulse the opacity using sine wave with larger amplitude
+                this.opacity = this.baseOpacity + Math.sin(this.time + this.pulseOffset) * 0.15;
+
+                if (this.x < 0 || this.x > canvas.width) this.reset();
+                if (this.y < 0 || this.y > canvas.height) this.reset();
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        // Create particles
+        const particles = Array(314).fill().map(() => new Particle());
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html> 
